@@ -64,18 +64,17 @@ class Config:
     def parse_config(self, config_file):
         self._config = {}
 
-        try:
-            with config_file.open() as f:
-                self._config = yaml.load(f.read()) or {}
-                self._config['cnames'] = set(self._config.get('cnames', []))
-        except FileNotFoundError:
-            pass
+        if not config_file.is_file():
+            return
+
+        self._config = yaml.load(config_file.read_text()) or {}
+        self._config['cnames'] = set(self._config.get('cnames', []))
 
     def dump_config(self, config_file):
         config = dict(self._config)
-        config['cnames'] = list(config['cnames'])
-        with config_file.open('w') as f:
-            f.write(yaml.dump(config, default_flow_style=False))
+        config['cnames'] = list(config.get('cnames', []))
+        config_file.parent.mkdir(parents=True, exist_ok=True)
+        config_file.write_text(yaml.dump(config, default_flow_style=False))
 
 
 def main():
@@ -228,7 +227,6 @@ def current_ip_ipify():
 
 
 def previous_value(tmp_folder, name):
-    tmp_folder.mkdir(parents=True, exist_ok=True)
     file = tmp_folder / name
     if not file.is_file():
         return None
