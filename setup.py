@@ -27,7 +27,7 @@ with _open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
         },
         install_requires=[
             'requests==2.18.4',
-            'pyyaml==3.12',
+            'pyyaml==5.1',
         ],
         extras_require={
             'dev': [
