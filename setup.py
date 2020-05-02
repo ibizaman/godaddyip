@@ -15,6 +15,7 @@ with _open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
         version=VERSION,
         description='Maintains A and CNAME records matching current ip in Godaddy.',
         long_description=LONG_DESCRIPTION,
+        long_description_content_type="text/markdown",
         author='Pierre Penninckx',
         author_email='ibizapeanut@gmail.com',
         license='GPLv3',
