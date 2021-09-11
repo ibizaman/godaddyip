@@ -3,6 +3,7 @@ Maintains A and CNAME records in Godaddy.
 """
 import argparse
 import json
+import logging
 import signal
 from pathlib import Path
 from time import sleep
@@ -26,6 +27,7 @@ GODADDY_HEADERS = {
     'Content-Type': 'application/json',
     'Authorization': 'sso-key {key}:{secret}'
 }
+LOG = logging.getLogger(__name__)
 
 
 class Config:
@@ -147,14 +149,14 @@ def run(config_files, tmp_folder, **_kwargs):
 
     def sigusr1_handler(_signum, _stack):
         config.parse_config(find_config(config_files))
-        print('Reloaded configuration file.')
+        LOG.info('Reloaded configuration file.')
         
     signal.signal(signal.SIGUSR1, sigusr1_handler)
 
     while True:
         try:
             maintain_records(config, tmp_folder)
-            print('Sleeping for 5 minutes.')
+            LOG.info('Sleeping for 5 minutes.')
             sleep(300)
         except KeyboardInterrupt:
             return
@@ -180,18 +182,18 @@ def maintain_records(config, tmp_folder):
 
 
 def update_arecord(tmp_folder, headers, domain, arecord, ip):
-    print('Updating A record {}.'.format(arecord))
+    LOG.info('Updating A record {}.'.format(arecord))
 
     if previous_value(tmp_folder, 'arecord') == ip:
-        print('Same ip as previous one, nothing to do.')
+        LOG.info('Same ip as previous one, nothing to do.')
         return True
 
     url = GODADDY_URL_RECORD.format(domain=domain, type='A', name=arecord)
 
     r = requests.put(url, headers=headers, data=json.dumps([{'data': ip}]))
     if r.status_code != 200:
-        print('Could not update A record {}:'.format(arecord))
-        print(r.text)
+        LOG.error('Could not update A record {}:'.format(arecord))
+        LOG.error(r.text)
         return False
 
     store_value(tmp_folder, 'arecord', ip)
@@ -199,10 +201,10 @@ def update_arecord(tmp_folder, headers, domain, arecord, ip):
 
 
 def update_cname(tmp_folder, headers, domain, cname, alias):
-    print('Updating CNAME record {}.'.format(cname))
+    LOG.info('Updating CNAME record {}.'.format(cname))
 
     if previous_value(tmp_folder, cname) == alias:
-        print('Same alias as previous one, nothing to do.')
+        LOG.info('Same alias as previous one, nothing to do.')
         return True
 
     full_cname = cname + '.' + alias
@@ -212,8 +214,8 @@ def update_cname(tmp_folder, headers, domain, cname, alias):
 
     r = requests.put(url, headers=headers, data=json.dumps([{'data': full_alias}]))
     if r.status_code != 200:
-        print('Could not update CNAME record {}:'.format(cname))
-        print(r.text)
+        LOG.error('Could not update CNAME record {}:'.format(cname))
+        LOG.error(r.text)
         return False
 
     store_value(tmp_folder, cname, alias)
@@ -239,4 +241,8 @@ def store_value(tmp_folder, name, value):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        format="[%(asctime)s] %(levelname)s: %(message)s (%(filename)s:%(lineno)d)",
+        level=logging.INFO,
+    )
     main()
