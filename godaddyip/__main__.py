@@ -69,7 +69,7 @@ class Config:
         if not config_file.is_file():
             return
 
-        self._config = yaml.load(config_file.read_text()) or {}
+        self._config = yaml.load(config_file.read_text(), Loader=yaml.FullLoader) or {}
         self._config['cnames'] = set(self._config.get('cnames', []))
 
     def dump_config(self, config_file):
