@@ -29,7 +29,7 @@ with _open(path.join(HERE, "README.md"), encoding="utf-8") as f:
             "console_scripts": ["{0}={0}.__main__:main".format(PACKAGE.lower())],
         },
         install_requires=[
-            "requests==2.20.0",
+            "requests==2.31.0",
             "pyyaml==5.4.1",
         ],
         extras_require={
