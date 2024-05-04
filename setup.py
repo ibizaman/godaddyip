@@ -32,7 +32,7 @@ setup(
         "requests==2.31.0",
         "pyyaml==6.0.1",
     ],
-    "test"=[
-        "black",
-    ],
+    extras_require={
+        "test": ["black"],
+    },
 )
