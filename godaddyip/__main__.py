@@ -1,6 +1,7 @@
 """
 Maintains A and CNAME records in Godaddy.
 """
+
 import argparse
 import json
 import logging
@@ -83,6 +84,10 @@ class Config:
 
 
 def main():
+    logging.basicConfig(
+        format="[%(asctime)s] %(levelname)s: %(message)s (%(filename)s:%(lineno)d)",
+        level=logging.INFO,
+    )
     parser = argparse.ArgumentParser(__doc__)
     parser.set_defaults(func=None)
     command_parser = parser.add_subparsers()
@@ -259,8 +264,4 @@ def store_value(tmp_folder, name, value):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        format="[%(asctime)s] %(levelname)s: %(message)s (%(filename)s:%(lineno)d)",
-        level=logging.INFO,
-    )
     main()
