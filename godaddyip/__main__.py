@@ -6,9 +6,11 @@ import argparse
 import json
 import logging
 import signal
+from io import BytesIO
 from pathlib import Path
 from time import sleep
 
+import pycurl
 import requests
 import yaml
 
@@ -22,7 +24,7 @@ DEFAULT_CONFIG_FILES = [
     ]
 ]
 
-IPIFY_URL = "https://api.ipify.org?format=json"
+IP_URL = "https://icanhazip.com/"
 
 GODADDY_URL = "https://api.godaddy.com/v1"
 GODADDY_URL_RECORD = GODADDY_URL + "/domains/{domain}/records/{type}/{name}"
@@ -43,8 +45,17 @@ class Config:
     def __getitem__(self, key):
         return self._config[key]
 
+    def __setitem__(self, key, value):
+        self._config[key] = value
+
+    def __missing__(self, _key):
+        return None
+
     def set_arecord(self, value):
         self._config["arecord"] = value
+
+    def set_aaaarecord(self, value):
+        self._config["aaaarecord"] = value
 
     def set_key(self, value):
         self._config["key"] = value
@@ -197,29 +208,34 @@ def maintain_records(config, tmp_folder):
         key=config["key"], secret=config["secret"]
     )
 
-    ip = current_ip_ipify()
-    update_arecord(tmp_folder, headers, config["domain"], config["arecord"], ip)
+    ip = get_current_ip()
+    update_arecord("A", tmp_folder, headers, config["domain"], config["arecord"], ip)
+    if config._config.get("aaaarecord"):
+        ipv6 = get_current_ip(ipv6=True)
+        update_arecord(
+            "AAAA", tmp_folder, headers, config["domain"], config["aaaarecord"], ipv6
+        )
 
     for cname in config["cnames"]:
         update_cname(tmp_folder, headers, config["domain"], cname, config["arecord"])
 
 
-def update_arecord(tmp_folder, headers, domain, arecord, ip):
-    LOG.info("Updating A record {}.".format(arecord))
+def update_arecord(record_type, tmp_folder, headers, domain, arecord, ip):
+    LOG.info("Updating {} record {}.".format(record_type, arecord))
 
-    if previous_value(tmp_folder, "arecord") == ip:
-        LOG.info("Same ip as previous one, nothing to do.")
+    if previous_value(tmp_folder, record_type) == ip:
+        LOG.info("Same IP {} as previous one, nothing to do.".format(ip))
         return True
 
-    url = GODADDY_URL_RECORD.format(domain=domain, type="A", name=arecord)
+    url = GODADDY_URL_RECORD.format(domain=domain, type=record_type, name=arecord)
 
     r = requests.put(url, headers=headers, data=json.dumps([{"data": ip}]))
     if r.status_code != 200:
-        LOG.error("Could not update A record {}:".format(arecord))
+        LOG.error("Could not update {} record {}:".format(record_type, arecord))
         LOG.error(r.text)
         return False
 
-    store_value(tmp_folder, "arecord", ip)
+    store_value(tmp_folder, record_type, ip)
     return True
 
 
@@ -245,10 +261,25 @@ def update_cname(tmp_folder, headers, domain, cname, alias):
     return True
 
 
-def current_ip_ipify():
-    r = requests.get(IPIFY_URL)
-    r.raise_for_status()
-    return r.json()["ip"]
+# Using pycurl so we can specify to connect via IPv4 or IPv6 on dual stacked clients
+def get_current_ip(ipv6=False):
+    curl = pycurl.Curl()
+    curl.setopt(curl.URL, IP_URL)
+    if not ipv6:
+        curl.setopt(pycurl.IPRESOLVE, pycurl.IPRESOLVE_V4)
+
+    buffer = BytesIO()
+    curl.setopt(curl.WRITEDATA, buffer)
+    curl.perform()
+    response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+    if response_code != 200:
+        raise Exception(
+            "Unable to find current {} IP".format("IPv6" if ipv6 else "IPv4")
+        )
+
+    response_body = buffer.getvalue().decode("utf-8")
+    curl.close()
+    return response_body.strip()
 
 
 def previous_value(tmp_folder, name):

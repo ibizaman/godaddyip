@@ -30,6 +30,7 @@ setup(
     },
     install_requires=[
         "requests==2.32.0",
+        "pycurl==7.45.3",
         "pyyaml==6.0.1",
     ],
     extras_require={
