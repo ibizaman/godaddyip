@@ -1,0 +1,7 @@
+arecord: unittest
+aaaarecord: unittest
+key:     ABC6969
+secret:  zYU0069
+domain:  unittest.com
+cnames:
+  - testing
