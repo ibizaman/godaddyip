@@ -1,5 +1,7 @@
 # From https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore
 
+.coverage
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -8,3 +10,4 @@ __pycache__/
 # Distribution / packaging
 *.egg-info/
 dist/
+build/

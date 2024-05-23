@@ -92,3 +92,10 @@ WantedBy=default.target
 
 I advice running the daemon with a non-root user. A system user can be
 created with `useradd --system godaddyip`.
+
+# Unit tests
+
+To run unit tests locally do the following:
+
+- `python3 -m venv --upgrade-deps /tmp/tg`
+- `/tmp/tg/bin/python godaddyip/tests.py -v`

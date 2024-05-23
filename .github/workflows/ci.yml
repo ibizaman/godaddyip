@@ -29,3 +29,7 @@ jobs:
     - name: Check files are formatted with black
       run: |
         black --check --diff .
+
+    - name: Run unittests
+      run: |
+        python godaddyip/tests.py -v
