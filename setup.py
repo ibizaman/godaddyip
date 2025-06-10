@@ -29,7 +29,7 @@ setup(
         "console_scripts": ["{0}={0}.__main__:main".format(PACKAGE.lower())],
     },
     install_requires=[
-        "requests==2.32.0",
+        "requests==2.32.4",
         "pycurl==7.45.3",
         "pyyaml==6.0.1",
     ],
